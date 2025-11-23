@@ -8,7 +8,9 @@ const { height } = Dimensions.get('window');
 
 const RouteDetailSheet = ({
     routeDetails, isCompleted, newStopAddress, setNewStopAddress,
-    handleAddStop, handleDeleteStop, handleUpdateStopStatus, handleManualCompleteRoute, handleOptimizeRoute
+    handleAddStop, handleDeleteStop, handleUpdateStopStatus, handleManualCompleteRoute, handleOptimizeRoute,
+    isNavigationMode,         // <-- MỚI
+    handleToggleNavigation,   // <-- MỚI
 }) => {
     const draggableRange = { top: height * 0.85, bottom: 140 }; // Tăng chiều cao kéo lên
 
@@ -98,22 +100,36 @@ const RouteDetailSheet = ({
                             <Text style={styles.infoPending}>Lộ trình chưa được tối ưu hóa</Text>
                         )}
 
-                        {/* Nút TỐI ƯU HÓA (Thiết kế mới) */}
-                        {!isCompleted && routeDetails?.stops?.length > 0 && (
+                        {/* HÀNG NÚT BẤM (Tối ưu & Bắt đầu) */}
+                        <View style={{ flexDirection: 'row', gap: 10, marginTop: 15 }}>
+
+                            {/* Nút Tối ưu (Giữ nguyên logic cũ, chỉ bọc lại hoặc chỉnh style flex) */}
+                            {!isCompleted && routeDetails?.stops?.length > 0 && (
+                                <TouchableOpacity
+                                    style={[styles.actionButton, { backgroundColor: COLORS.secondary, flex: 1 }]}
+                                    onPress={handleOptimizeRoute}
+                                >
+                                    <Icon name="flash" size={20} color="#fff" style={{ marginRight: 5 }} />
+                                    <Text style={styles.btnText}>
+                                        {routeDetails?.overview_polyline ? "Tối ưu lại" : "Tối ưu ngay"}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+
+                            {/* NÚT BẮT ĐẦU / DỪNG (MỚI) */}
                             <TouchableOpacity
                                 style={[
-                                    styles.optimizeButton,
-                                    routeDetails?.overview_polyline && { backgroundColor: COLORS.secondary }
+                                    styles.actionButton,
+                                    { backgroundColor: isNavigationMode ? COLORS.danger : COLORS.primary, flex: 1 }
                                 ]}
-                                onPress={handleOptimizeRoute}
-                                activeOpacity={0.8}
+                                onPress={handleToggleNavigation}
                             >
-                                <Icon name="flash" size={20} color="#fff" style={{ marginRight: 8 }} />
-                                <Text style={styles.optimizeButtonText}>
-                                    {routeDetails?.overview_polyline ? "Tối ưu lại (Cập nhật)" : "TỐI ƯU NGAY"}
+                                <Icon name={isNavigationMode ? "stop-circle" : "navigate"} size={20} color="#fff" style={{ marginRight: 5 }} />
+                                <Text style={styles.btnText}>
+                                    {isNavigationMode ? "Dừng lại" : "Bắt đầu đi"}
                                 </Text>
                             </TouchableOpacity>
-                        )}
+                        </View>
                     </View>
 
                     {/* FORM THÊM */}
@@ -263,6 +279,15 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         elevation: 3,
     },
+    actionButton: {
+        flexDirection: 'row',
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, elevation: 3,
+    },
+    // btnText đã có sẵn
     listHeader: {
         marginBottom: 10,
         borderBottomWidth: 1,

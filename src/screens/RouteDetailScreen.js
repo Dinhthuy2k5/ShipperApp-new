@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import {
+    StyleSheet,
+    ActivityIndicator,
+    Alert,
+    View,
+    // THÊM 2 CÁI NÀY VÀO ĐÂY:
+    PermissionsAndroid,
+    Platform
+} from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RouteDetailMap from '../components/RouteDetailMap';
@@ -11,7 +19,42 @@ const RouteDetailScreen = ({ route }) => {
     const { routeId } = route.params;
     const [data, setData] = useState(null);
     const [newStop, setNewStop] = useState('');
+    const [isNavigationMode, setIsNavigationMode] = useState(false); // <-- STATE MỚI
 
+    // --- HÀM MỚI: XIN QUYỀN & BẬT DẪN ĐƯỜNG ---
+    const handleToggleNavigation = async () => {
+        if (isNavigationMode) {
+            setIsNavigationMode(false);
+        } else {
+            if (Platform.OS === 'android') {
+                try {
+                    // Xin quyền Fine Location (Chính xác)
+                    const granted = await PermissionsAndroid.request(
+                        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+                        {
+                            title: "Quyền truy cập vị trí",
+                            message: "ShipperApp cần truy cập vị trí để dẫn đường.",
+                            buttonNeutral: "Hỏi lại sau",
+                            buttonNegative: "Hủy",
+                            buttonPositive: "Đồng ý"
+                        }
+                    );
+
+                    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+                        console.log("Đã cấp quyền vị trí");
+                        setIsNavigationMode(true);
+                    } else {
+                        console.log("Quyền vị trí bị từ chối");
+                        Alert.alert("Cần quyền truy cập", "Vui lòng cấp quyền vị trí trong cài đặt để sử dụng tính năng này.");
+                    }
+                } catch (err) {
+                    console.warn(err);
+                }
+            } else {
+                setIsNavigationMode(true);
+            }
+        }
+    };
     const loadData = useCallback(async () => {
         const token = await AsyncStorage.getItem('userToken');
         const res = await axios.get(`${BASE}/${routeId}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -30,7 +73,10 @@ const RouteDetailScreen = ({ route }) => {
         <View style={{ flex: 1 }}>
             {data ? (
                 <>
-                    <RouteDetailMap routeDetails={data} />
+                    <RouteDetailMap
+                        routeDetails={data}
+                        isNavigationMode={isNavigationMode}
+                    />
                     <RouteDetailSheet
                         routeDetails={data}
                         isCompleted={data.route_status === 'completed'}
@@ -41,6 +87,8 @@ const RouteDetailScreen = ({ route }) => {
                         handleUpdateStopStatus={(id, s) => apiCall('patch', `${BASE}/${routeId}/stops/${id}`, { status: s === 'delivered' ? 'failed' : s === 'failed' ? 'pending' : 'delivered' })}
                         handleManualCompleteRoute={() => apiCall('patch', `${BASE}/${routeId}/status`, { status: 'completed' })}
                         handleOptimizeRoute={() => apiCall('post', `${BASE}/${routeId}/optimize`)}
+                        isNavigationMode={isNavigationMode}
+                        handleToggleNavigation={handleToggleNavigation}
                     />
                 </>
             ) : <ActivityIndicator size="large" color="blue" style={{ marginTop: 50 }} />}
