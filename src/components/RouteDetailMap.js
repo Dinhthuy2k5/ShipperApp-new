@@ -9,7 +9,7 @@ import { COLORS } from '../utils/colors'; // Import bộ màu chuẩn
 
 // Import Token
 import { MAPBOX_ACCESS_TOKEN } from '../utils/config';
-if (!MAPBOX_ACCESS_TOKEN) MapboxGL.setAccessToken("pk.eyJ...");
+MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
 
 const RouteDetailMap = ({ routeDetails, isNavigationMode }) => {
     const cameraRef = useRef(null);

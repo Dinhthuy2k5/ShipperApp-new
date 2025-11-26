@@ -11,6 +11,6 @@ export default ({ onSignOut }) => (
         tabBarIcon: ({ color, size }) => <Icon name={route.name === 'TabHome' ? 'home' : 'person'} size={size} color={color} />
     })}>
         <Tab.Screen name="TabHome" component={HomeStack} options={{ title: 'Trang chủ' }} />
-        <Tab.Screen name="TabProfile" children={() => <ProfileScreen onSignOut={onSignOut} />} options={{ title: 'Cá nhân' }} />
+        <Tab.Screen name="TabProfile" children={() => <ProfileScreen onSignOut={onSignOut} />} options={{ title: 'Tài khoản' }} />
     </Tab.Navigator>
 );
