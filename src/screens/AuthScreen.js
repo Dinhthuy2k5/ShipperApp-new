@@ -9,12 +9,22 @@ const AuthScreen = ({ route }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
+    const [phone, setPhone] = useState('');
+    const [vehicle, setVehicle] = useState('');
     const [isRegistering, setIsRegistering] = useState(false);
 
     const handleAuth = async () => {
+
+        if (!email || !password || (isRegistering && (!fullName || !phone))) {
+            Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin.');
+            return;
+        }
+
         try {
             if (isRegistering) {
-                await axios.post(`${API_URL}/register`, { email, password, fullName });
+                await axios.post(`${API_URL}/register`, {
+                    email, password, fullName, phone, vehicle
+                });
                 Alert.alert('Thành công', 'Đăng ký thành công! Đang đăng nhập...');
             }
             const res = await axios.post(`${API_URL}/login`, { email, password });
@@ -30,6 +40,21 @@ const AuthScreen = ({ route }) => {
             <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" />
             {isRegistering && <TextInput style={styles.input} placeholder="Họ tên" value={fullName} onChangeText={setFullName} />}
             <TextInput style={styles.input} placeholder="Mật khẩu" value={password} onChangeText={setPassword} secureTextEntry />
+            {/* THÊM Ô NHẬP SỐ ĐIỆN THOẠI */}
+            <TextInput
+                style={styles.input}
+                placeholder="Số điện thoại"
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+            />
+            {/* THÊM Ô NHẬP PHƯƠNG TIỆN */}
+            <TextInput
+                style={styles.input}
+                placeholder="Phương tiện (VD: Honda Vision 29A-12345)"
+                value={vehicle}
+                onChangeText={setVehicle}
+            />
             <TouchableOpacity style={styles.btn} onPress={handleAuth}><Text style={styles.btnText}>{isRegistering ? 'ĐĂNG KÝ' : 'ĐĂNG NHẬP'}</Text></TouchableOpacity>
             <TouchableOpacity onPress={() => setIsRegistering(!isRegistering)}><Text style={styles.link}>{isRegistering ? 'Quay lại Đăng nhập' : 'Chưa có tài khoản? Đăng ký'}</Text></TouchableOpacity>
         </View>
