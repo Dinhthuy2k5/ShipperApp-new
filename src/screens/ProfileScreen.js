@@ -1,6 +1,6 @@
 // File: src/screens/ProfileScreen.js
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -18,7 +18,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../utils/colors';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
+// LƯU Ý: Không dùng useFocusEffect nữa để tránh load lại liên tục
 
 const API_URL = 'http://10.0.2.2:3000/api/auth/profile';
 
@@ -31,29 +31,25 @@ const ProfileScreen = ({ onSignOut }) => {
     });
 
     const [backupUserInfo, setBackupUserInfo] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true); // Mặc định là true để load lần đầu
     const [isEditing, setIsEditing] = useState(false);
     const [isNotiEnabled, setIsNotiEnabled] = useState(true);
     const [isLocationEnabled, setIsLocationEnabled] = useState(true);
 
-    // --- HÀM MỚI: HIỂN THỊ THÔNG BÁO ---
+    // --- HÀM: HIỂN THỊ THÔNG BÁO ---
     const showFeatureAlert = () => {
         Alert.alert(
-            "Thông báo", // Tiêu đề (sẽ in đậm mặc định)
-            "Tính năng này đang được cập nhật.\nXin cảm ơn!", // Nội dung (xuống dòng cho đẹp)
-            [
-                {
-                    text: "Đóng",
-                    style: "cancel", // Style nút hủy (màu xanh/đậm tùy OS)
-                }
-            ],
-            { cancelable: true } // Cho phép bấm ra ngoài để tắt
+            "Thông báo",
+            "Tính năng này đang được cập nhật.\nXin cảm ơn!",
+            [{ text: "Đóng", style: "cancel" }],
+            { cancelable: true }
         );
     };
 
+    // --- 1. HÀM TẢI DỮ LIỆU ---
     const fetchProfile = async () => {
+        console.log("ProfileScreen: Đang tải dữ liệu..."); // Log để kiểm tra
         try {
-            setLoading(true);
             const token = await AsyncStorage.getItem('userToken');
             const response = await axios.get(API_URL, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -66,24 +62,26 @@ const ProfileScreen = ({ onSignOut }) => {
         }
     };
 
-    useFocusEffect(
-        useCallback(() => {
-            fetchProfile();
-        }, [])
-    );
+    // --- 2. OPTIMIZATION: CHỈ TẢI 1 LẦN KHI MỞ APP ---
+    // Thay thế useFocusEffect bằng useEffect với dependency rỗng []
+    useEffect(() => {
+        fetchProfile();
+    }, []);
 
+    // --- 3. CÁC HÀM XỬ LÝ ---
     const handleStartEdit = () => {
-        setBackupUserInfo({ ...userInfo });
+        setBackupUserInfo({ ...userInfo }); // Lưu bản sao lưu
         setIsEditing(true);
     };
 
     const handleCancelEdit = () => {
-        setUserInfo(backupUserInfo);
+        setUserInfo(backupUserInfo); // Khôi phục dữ liệu cũ
         setIsEditing(false);
     };
 
     const handleSave = async () => {
         try {
+            setLoading(true); // Hiện loading nhẹ khi lưu
             const token = await AsyncStorage.getItem('userToken');
             await axios.put(API_URL, {
                 fullName: userInfo.full_name,
@@ -95,7 +93,12 @@ const ProfileScreen = ({ onSignOut }) => {
 
             setIsEditing(false);
             Alert.alert("Thành công", "Đã cập nhật thông tin!");
+
+            // QUAN TRỌNG: Chỉ tải lại dữ liệu khi đã Lưu thành công
+            fetchProfile();
+
         } catch (error) {
+            setLoading(false);
             Alert.alert("Lỗi", "Không thể cập nhật thông tin.");
         }
     };
@@ -110,6 +113,7 @@ const ProfileScreen = ({ onSignOut }) => {
         );
     };
 
+    // --- COMPONENT CON ---
     const InfoRow = ({ icon, label, fieldKey, keyboardType = 'default', editable = true }) => (
         <View style={styles.infoRow}>
             <View style={styles.iconContainer}>
@@ -120,8 +124,8 @@ const ProfileScreen = ({ onSignOut }) => {
                 {isEditing && editable ? (
                     <TextInput
                         style={styles.infoInput}
-                        value={userInfo[fieldKey]}
-                        onChangeText={(text) => setUserInfo({ ...userInfo, [fieldKey]: text })}
+                        value={userInfo[fieldKey]} // SỬA: Lấy đúng key
+                        onChangeText={(text) => setUserInfo({ ...userInfo, [fieldKey]: text })} // SỬA: Cập nhật đúng key
                         keyboardType={keyboardType}
                         autoCorrect={false}
                     />
@@ -153,6 +157,7 @@ const ProfileScreen = ({ onSignOut }) => {
         </TouchableOpacity>
     );
 
+    // Render Loading toàn màn hình (chỉ khi chưa có dữ liệu lần đầu)
     if (loading && !userInfo.email) {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -165,6 +170,7 @@ const ProfileScreen = ({ onSignOut }) => {
         <SafeAreaView style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false}>
 
+                {/* HEADER */}
                 <View style={styles.header}>
                     <View style={styles.avatarContainer}>
                         <Image source={{ uri: 'https://i.pravatar.cc/150?img=11' }} style={styles.avatar} />
@@ -184,7 +190,7 @@ const ProfileScreen = ({ onSignOut }) => {
                                     <Text style={styles.cancelButtonText}>Hủy</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={[styles.actionButton, styles.saveButton]} onPress={handleSave}>
-                                    <Text style={styles.saveButtonText}>Lưu thay đổi</Text>
+                                    {loading ? <ActivityIndicator size="small" color="white" /> : <Text style={styles.saveButtonText}>Lưu thay đổi</Text>}
                                 </TouchableOpacity>
                             </>
                         ) : (
@@ -195,6 +201,7 @@ const ProfileScreen = ({ onSignOut }) => {
                     </View>
                 </View>
 
+                {/* THÔNG TIN */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Thông tin cá nhân</Text>
                     <View style={styles.card}>
@@ -208,46 +215,25 @@ const ProfileScreen = ({ onSignOut }) => {
                     </View>
                 </View>
 
+                {/* CÀI ĐẶT */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Cài đặt ứng dụng</Text>
                     <View style={styles.card}>
-                        <MenuItem
-                            icon="notifications-outline" title="Nhận thông báo đơn hàng"
-                            isSwitch={true} value={isNotiEnabled}
-                            onPress={() => setIsNotiEnabled(!isNotiEnabled)}
-                        />
+                        <MenuItem icon="notifications-outline" title="Nhận thông báo đơn hàng" isSwitch={true} value={isNotiEnabled} onPress={() => setIsNotiEnabled(!isNotiEnabled)} />
                         <View style={styles.divider} />
-                        <MenuItem
-                            icon="location-outline" title="Chia sẻ vị trí thời gian thực"
-                            isSwitch={true} value={isLocationEnabled}
-                            onPress={() => setIsLocationEnabled(!isLocationEnabled)}
-                        />
+                        <MenuItem icon="location-outline" title="Chia sẻ vị trí thời gian thực" isSwitch={true} value={isLocationEnabled} onPress={() => setIsLocationEnabled(!isLocationEnabled)} />
                         <View style={styles.divider} />
-                        {/* CẬP NHẬT: Nút Ngôn ngữ */}
-                        <MenuItem
-                            icon="language-outline"
-                            title="Ngôn ngữ"
-                            onPress={showFeatureAlert}
-                        />
+                        <MenuItem icon="language-outline" title="Ngôn ngữ" onPress={showFeatureAlert} />
                     </View>
                 </View>
 
+                {/* HỖ TRỢ */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Hỗ trợ</Text>
                     <View style={styles.card}>
-                        {/* CẬP NHẬT: Nút Trung tâm trợ giúp */}
-                        <MenuItem
-                            icon="help-circle-outline"
-                            title="Trung tâm trợ giúp"
-                            onPress={showFeatureAlert}
-                        />
+                        <MenuItem icon="help-circle-outline" title="Trung tâm trợ giúp" onPress={showFeatureAlert} />
                         <View style={styles.divider} />
-                        {/* CẬP NHẬT: Nút Điều khoản */}
-                        <MenuItem
-                            icon="document-text-outline"
-                            title="Điều khoản & Chính sách"
-                            onPress={showFeatureAlert}
-                        />
+                        <MenuItem icon="document-text-outline" title="Điều khoản & Chính sách" onPress={showFeatureAlert} />
                     </View>
                 </View>
 
@@ -262,19 +248,13 @@ const ProfileScreen = ({ onSignOut }) => {
     );
 };
 
+// --- Styles giữ nguyên như cũ ---
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F2F2F7' },
-    header: {
-        alignItems: 'center', padding: 20, backgroundColor: 'white',
-        borderBottomLeftRadius: 24, borderBottomRightRadius: 24,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, elevation: 4, marginBottom: 20,
-    },
+    header: { alignItems: 'center', padding: 20, backgroundColor: 'white', borderBottomLeftRadius: 24, borderBottomRightRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, elevation: 4, marginBottom: 20 },
     avatarContainer: { position: 'relative', marginBottom: 10 },
     avatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, borderColor: '#F2F2F7' },
-    editAvatarBadge: {
-        position: 'absolute', bottom: 0, right: 0, backgroundColor: COLORS.primary,
-        width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'white',
-    },
+    editAvatarBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: COLORS.primary, width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'white' },
     nameText: { fontSize: 20, fontWeight: 'bold', color: COLORS.textMain },
     roleText: { fontSize: 14, color: COLORS.textSub, marginTop: 2 },
     actionButtonsContainer: { flexDirection: 'row', marginTop: 15, gap: 10 },
