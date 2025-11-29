@@ -36,6 +36,14 @@ const ProfileScreen = ({ onSignOut }) => {
     const [isNotiEnabled, setIsNotiEnabled] = useState(true);
     const [isLocationEnabled, setIsLocationEnabled] = useState(true);
 
+    const [stats, setStats] = useState({
+        daysActive: 0,
+        totalRoutes: 0,
+        totalDistanceKm: 0,
+        successDeliveries: 0,
+        rating: 0,
+    });
+
     // --- HÀM: HIỂN THỊ THÔNG BÁO ---
     const showFeatureAlert = () => {
         Alert.alert(
@@ -61,11 +69,24 @@ const ProfileScreen = ({ onSignOut }) => {
             setLoading(false);
         }
     };
+    // Hàm tải thống kê 
+    const fetchStats = async () => {
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+            const response = await axios.get('http://10.0.2.2:3000/api/stats/summary', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setStats(response.data);
+        } catch (error) {
+            console.error('Lỗi tải thống kê:', error);
+        }
+    };
 
     // --- 2. OPTIMIZATION: CHỈ TẢI 1 LẦN KHI MỞ APP ---
     // Thay thế useFocusEffect bằng useEffect với dependency rỗng []
     useEffect(() => {
         fetchProfile();
+        fetchStats();
     }, []);
 
     // --- 3. CÁC HÀM XỬ LÝ ---
@@ -157,6 +178,18 @@ const ProfileScreen = ({ onSignOut }) => {
         </TouchableOpacity>
     );
 
+    const StatItem = ({ label, value, icon, color }) => (
+        <View style={styles.statItem}>
+            <View style={[styles.statIconBox, { backgroundColor: color + '20' }]}>
+                <Icon name={icon} size={20} color={color} />
+            </View>
+            <View>
+                <Text style={styles.statValue}>{value}</Text>
+                <Text style={styles.statLabel}>{label}</Text>
+            </View>
+        </View>
+    );
+
     // Render Loading toàn màn hình (chỉ khi chưa có dữ liệu lần đầu)
     if (loading && !userInfo.email) {
         return (
@@ -198,6 +231,43 @@ const ProfileScreen = ({ onSignOut }) => {
                                 <Text style={styles.editButtonText}>Chỉnh sửa hồ sơ</Text>
                             </TouchableOpacity>
                         )}
+                    </View>
+                </View>
+
+                {/* --- PHẦN MỚI: THỐNG KÊ HOẠT ĐỘNG --- */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Thống kê hoạt động</Text>
+
+                    {/* Hàng 1: Tổng quan */}
+                    <View style={styles.statsGrid}>
+                        <StatItem
+                            icon="calendar"
+                            label="Ngày hoạt động"
+                            value={`${stats.daysActive} ngày`}
+                            color="#FF9500"
+                        />
+                        <StatItem
+                            icon="cube"
+                            label="Đơn giao xong"
+                            value={stats.successDeliveries}
+                            color="#34C759"
+                        />
+                    </View>
+
+                    {/* Hàng 2: Di chuyển */}
+                    <View style={[styles.statsGrid, { marginTop: 10 }]}>
+                        <StatItem
+                            icon="speedometer"
+                            label="Tổng quãng đường"
+                            value={`${stats.totalDistanceKm} km`}
+                            color="#007AFF"
+                        />
+                        <StatItem
+                            icon="star"
+                            label="Đánh giá"
+                            value={`${stats.rating} ⭐`}
+                            color="#FFCC00"
+                        />
                     </View>
                 </View>
 
@@ -280,6 +350,33 @@ const styles = StyleSheet.create({
     menuText: { fontSize: 16, color: COLORS.textMain, marginLeft: 12 },
     logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 20, padding: 15, backgroundColor: '#FFE5E5', borderRadius: 16 },
     logoutText: { color: COLORS.danger, fontWeight: 'bold', fontSize: 16, marginLeft: 8 },
+    // Styles cho Thống kê
+    statsGrid: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 10,
+    },
+    statItem: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'white',
+        padding: 15,
+        borderRadius: 12,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, elevation: 2,
+    },
+    statIconBox: {
+        width: 40, height: 40,
+        borderRadius: 20,
+        justifyContent: 'center', alignItems: 'center',
+        marginRight: 10,
+    },
+    statValue: {
+        fontSize: 16, fontWeight: 'bold', color: COLORS.textMain,
+    },
+    statLabel: {
+        fontSize: 12, color: '#8E8E93',
+    },
 });
 
 export default ProfileScreen;
