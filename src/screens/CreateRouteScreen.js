@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import {
+    View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
+    DeviceEventEmitter
+} from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -15,6 +18,12 @@ const CreateRouteScreen = ({ navigation }) => {
             const routeId = res1.data.routeId;
             // 2. Cập nhật điểm bắt đầu
             await axios.put(`http://10.0.2.2:3000/api/routes/${routeId}/start-point`, { addressText: start }, { headers: { Authorization: `Bearer ${token}` } });
+            // : Bắn tín hiệu cập nhật ---
+            DeviceEventEmitter.emit('REFRESH_ROUTES');
+            Alert.alert(
+                'Thành công',
+                'Đã tạo lộ trình mới...',
+            );
             // 3. Chuyển trang
             navigation.replace('RouteDetail', { routeId });
         } catch (e) {

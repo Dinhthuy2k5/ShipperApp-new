@@ -1,6 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
-    View, Text, StyleSheet, TouchableOpacity, SectionList, SafeAreaView, StatusBar, ActivityIndicator, TextInput, Image
+    View, Text, StyleSheet, TouchableOpacity, SectionList, SafeAreaView, StatusBar, ActivityIndicator, TextInput, Image,
+    DeviceEventEmitter,
+    RefreshControl
 } from 'react-native';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
@@ -55,9 +57,22 @@ const HomeScreen = ({ navigation }) => {
         }
     };
 
-    useFocusEffect(
-        useCallback(() => { loadData(); }, [])
-    );
+    useEffect(() => {
+        // 1. Tải dữ liệu lần đầu tiên khi mở App
+        loadData();
+
+        // 2. Đăng ký lắng nghe sự kiện "REFRESH_ROUTES"
+        // Khi nào các màn hình khác phát tín hiệu này, ta mới tải lại
+        const listener = DeviceEventEmitter.addListener('REFRESH_ROUTES', () => {
+            console.log("Nhận tín hiệu làm mới dữ liệu...");
+            loadData();
+        });
+
+        // Dọn dẹp khi thoát
+        return () => {
+            listener.remove();
+        };
+    }, []); // Dependency rỗng -> Chỉ chạy 1 lần lúc mount
 
     const renderRouteItem = ({ item }) => (
         <TouchableOpacity
@@ -161,6 +176,10 @@ const HomeScreen = ({ navigation }) => {
                                 <Icon name="document-text-outline" size={50} color="#ddd" />
                                 <Text style={{ marginTop: 10, color: '#999' }}>{searchText ? "Không tìm thấy kết quả" : "Chưa có lộ trình nào"}</Text>
                             </View>
+                        }
+                        // THÊM TÍNH NĂNG KÉO ĐỂ LÀM MỚI (Thủ công)
+                        refreshControl={
+                            <RefreshControl refreshing={loading} onRefresh={loadData} colors={[COLORS.primary]} />
                         }
                     />
                 )}

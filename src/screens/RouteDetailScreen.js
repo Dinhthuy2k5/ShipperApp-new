@@ -1,12 +1,13 @@
+// File: src/screens/RouteDetailScreen.js
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-    StyleSheet,
+    View,
     ActivityIndicator,
     Alert,
-    View,
-    // THÊM 2 CÁI NÀY VÀO ĐÂY:
     PermissionsAndroid,
-    Platform
+    Platform,
+    DeviceEventEmitter // Đã import đúng
 } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,16 +20,15 @@ const RouteDetailScreen = ({ route }) => {
     const { routeId } = route.params;
     const [data, setData] = useState(null);
     const [newStop, setNewStop] = useState('');
-    const [isNavigationMode, setIsNavigationMode] = useState(false); // <-- STATE MỚI
+    const [isNavigationMode, setIsNavigationMode] = useState(false);
 
-    // --- HÀM MỚI: XIN QUYỀN & BẬT DẪN ĐƯỜNG ---
+    // --- XIN QUYỀN & BẬT DẪN ĐƯỜNG ---
     const handleToggleNavigation = async () => {
         if (isNavigationMode) {
             setIsNavigationMode(false);
         } else {
             if (Platform.OS === 'android') {
                 try {
-                    // Xin quyền Fine Location (Chính xác)
                     const granted = await PermissionsAndroid.request(
                         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
                         {
@@ -41,11 +41,9 @@ const RouteDetailScreen = ({ route }) => {
                     );
 
                     if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-                        console.log("Đã cấp quyền vị trí");
                         setIsNavigationMode(true);
                     } else {
-                        console.log("Quyền vị trí bị từ chối");
-                        Alert.alert("Cần quyền truy cập", "Vui lòng cấp quyền vị trí trong cài đặt để sử dụng tính năng này.");
+                        Alert.alert("Cần quyền truy cập", "Vui lòng cấp quyền vị trí để sử dụng tính năng này.");
                     }
                 } catch (err) {
                     console.warn(err);
@@ -55,18 +53,37 @@ const RouteDetailScreen = ({ route }) => {
             }
         }
     };
+
     const loadData = useCallback(async () => {
-        const token = await AsyncStorage.getItem('userToken');
-        const res = await axios.get(`${BASE}/${routeId}`, { headers: { Authorization: `Bearer ${token}` } });
-        setData(res.data);
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+            const res = await axios.get(`${BASE}/${routeId}`, { headers: { Authorization: `Bearer ${token}` } });
+            setData(res.data);
+        } catch (error) {
+            console.error("Lỗi tải dữ liệu:", error);
+        }
     }, [routeId]);
 
     useEffect(() => { loadData(); }, [loadData]);
 
+    // --- HÀM XỬ LÝ API CHUNG (Thêm phát tín hiệu tại đây) ---
     const apiCall = async (method, url, body = {}) => {
-        const token = await AsyncStorage.getItem('userToken');
-        await axios({ method, url, data: body, headers: { Authorization: `Bearer ${token}` } });
-        loadData();
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+
+            // 1. Gọi API thay đổi dữ liệu
+            await axios({ method, url, data: body, headers: { Authorization: `Bearer ${token}` } });
+
+            // 2. Tải lại dữ liệu cho màn hình Chi tiết này
+            loadData();
+
+            // 3. QUAN TRỌNG: Bắn tín hiệu để màn hình Home cập nhật lại danh sách
+            DeviceEventEmitter.emit('REFRESH_ROUTES');
+
+        } catch (error) {
+            console.error("Lỗi thao tác:", error);
+            Alert.alert("Lỗi", "Không thể thực hiện thao tác. Vui lòng thử lại.");
+        }
     };
 
     return (
@@ -82,16 +99,22 @@ const RouteDetailScreen = ({ route }) => {
                         isCompleted={data.route_status === 'completed'}
                         newStopAddress={newStop}
                         setNewStopAddress={setNewStop}
-                        handleAddStop={() => { apiCall('post', `${BASE}/${routeId}/stops`, { addressText: newStop }); setNewStop(''); }}
+                        // Gọi apiCall cho các hành động:
+                        handleAddStop={() => {
+                            if (!newStop.trim()) { Alert.alert("Lỗi", "Vui lòng nhập địa chỉ"); return; }
+                            apiCall('post', `${BASE}/${routeId}/stops`, { addressText: newStop });
+                            setNewStop('');
+                        }}
                         handleDeleteStop={(id) => apiCall('delete', `${BASE}/${routeId}/stops/${id}`)}
                         handleUpdateStopStatus={(id, s) => apiCall('patch', `${BASE}/${routeId}/stops/${id}`, { status: s === 'delivered' ? 'failed' : s === 'failed' ? 'pending' : 'delivered' })}
                         handleManualCompleteRoute={() => apiCall('patch', `${BASE}/${routeId}/status`, { status: 'completed' })}
                         handleOptimizeRoute={() => apiCall('post', `${BASE}/${routeId}/optimize`)}
+
                         isNavigationMode={isNavigationMode}
                         handleToggleNavigation={handleToggleNavigation}
                     />
                 </>
-            ) : <ActivityIndicator size="large" color="blue" style={{ marginTop: 50 }} />}
+            ) : <ActivityIndicator size="large" color="#007AFF" style={{ marginTop: 50 }} />}
         </View>
     );
 };
