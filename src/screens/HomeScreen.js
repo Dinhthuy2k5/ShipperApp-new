@@ -51,7 +51,28 @@ const HomeScreen = ({ navigation }) => {
             });
             setRoutes(response.data);
         } catch (error) {
-            console.error('Lỗi tải lộ trình:', error.message);
+            // --- BẮT LỖI 401 Ở ĐÂY ---
+            if (error.response && error.response.status === 401) {
+                console.log("Token hết hạn hoặc không hợp lệ");
+
+                Alert.alert(
+                    "Phiên đăng nhập hết hạn",
+                    "Vui lòng đăng nhập lại để tiếp tục.",
+                    [
+                        {
+                            text: "Đồng ý",
+                            onPress: async () => {
+                                // 1. Xóa token rác
+                                await AsyncStorage.removeItem('userToken');
+                                // 2. Bắn tín hiệu ra ngoài để App.js biết mà chuyển màn hình
+                                DeviceEventEmitter.emit('AUTH_EXPIRED');
+                            }
+                        }
+                    ]
+                );
+            } else {
+                console.error('Lỗi tải lộ trình:', error.message);
+            }
         } finally {
             setLoading(false);
         }
