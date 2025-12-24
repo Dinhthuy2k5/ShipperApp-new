@@ -14,9 +14,9 @@ Dự án này là phần Frontend được xây dựng bằng **React Native**, 
 
 | Màn hình Đăng nhập | Trang chủ (Dashboard) | Chi tiết Lộ trình |
 |:---:|:---:|:---:|
-| <img src="./docs/login.png" width="200"/> | <img src="./docs/home.png" width="200"/> | <img src="./docs/detail.png" width="200"/> |
+| <img src="./src/assets/login.png" width="200"/> | <img src="./src/assets/home.png" width="200"/> | <img src="./src/assets/routedetail.png" width="200"/> |
 
-*(Lưu ý: Bạn hãy thay thế đường dẫn ảnh bằng ảnh thực tế của dự án)*
+
 
 ---
 
@@ -66,6 +66,7 @@ Dự án này là phần Frontend được xây dựng bằng **React Native**, 
 
 ```text
 src/
+├── assets/             # Các image cần sử dụng
 ├── components/         # Các Component tái sử dụng (FilterModal, RouteSheet...)
 ├── hooks/              # Custom Hooks (useRouteFilter...)
 ├── navigation/         # Cấu hình điều hướng (AppNavigator, AuthStack, MainTab...)
@@ -90,7 +91,7 @@ src/
 Bước 1: Clone dự án
 
 ```Bash
-git clone [https://github.com/Dinhthuy2k5/ShipperApp-Frontend.git](https://github.com/Dinhthuy2k5/ShipperApp-Frontend.git)
+git clone https://github.com/Dinhthuy2k5/ShipperApp-new.git
 cd ShipperApp
 ```
 
@@ -130,7 +131,7 @@ npm run ios
 
      * Kiểm tra lại MAPBOX_ACCESS_TOKEN.
 
-     *Đảm bảo đã cấp quyền Vị trí (Location Permission) cho ứng dụng.
+     * Đảm bảo đã cấp quyền Vị trí (Location Permission) cho ứng dụng.
 
 ## 👨‍💻 Tác giả
 Nguyễn Đình Thủy
