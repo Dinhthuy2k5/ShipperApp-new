@@ -1,79 +1,140 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 📱 Shipper Route Optimization App (Frontend)
 
-# Getting Started
+![React Native](https://img.shields.io/badge/React_Native-v0.74+-blue.svg)
+![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-orange.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+> **Ứng dụng di động tối ưu hóa lộ trình giao hàng dành cho Shipper.**
 
-## Step 1: Start the Metro Server
+Dự án này là phần Frontend được xây dựng bằng **React Native**, kết nối với Backend (Node.js/MySQL) để cung cấp giải pháp quản lý đơn hàng, tối ưu hóa đường đi thông minh qua Mapbox và thống kê hiệu suất làm việc cho tài xế.
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+---
 
-To start Metro, run the following command from the _root_ of your React Native project:
+## 📸 Hình ảnh minh họa (Screenshots)
 
-```bash
-# using npm
-npm start
+| Màn hình Đăng nhập | Trang chủ (Dashboard) | Chi tiết Lộ trình |
+|:---:|:---:|:---:|
+| <img src="./docs/login.png" width="200"/> | <img src="./docs/home.png" width="200"/> | <img src="./docs/detail.png" width="200"/> |
 
-# OR using Yarn
-yarn start
+*(Lưu ý: Bạn hãy thay thế đường dẫn ảnh bằng ảnh thực tế của dự án)*
+
+---
+
+## ✨ Tính năng nổi bật (Key Features)
+
+### 1. 🔐 Xác thực & Người dùng (Authentication)
+* **Đăng ký/Đăng nhập:** Hỗ trợ nhập liệu đầy đủ thông tin (Họ tên, SĐT, Phương tiện).
+* **Auto-login:** Tự động đăng nhập khi mở app nhờ cơ chế lưu trữ Token an toàn (`AsyncStorage`).
+* **Session Management:** Tự động phát hiện Token hết hạn (401 Unauthorized) và yêu cầu đăng nhập lại.
+
+### 2. 📦 Quản lý Lộ trình (Route Management)
+* **Danh sách thông minh:** Hiển thị lộ trình nhóm theo **Ngày tạo** (`SectionList`).
+* **Tìm kiếm & Lọc:** * Tìm kiếm Real-time theo tên hoặc địa chỉ.
+    * Bộ lọc nâng cao: *Tất cả / Đang chờ / Hoàn thành*.
+    * Sắp xếp: *Mới nhất / Cũ nhất*.
+* **Real-time Update:** Sử dụng `DeviceEventEmitter` để đồng bộ dữ liệu tức thì giữa màn hình Chi tiết và Trang chủ (không cần reload lại app).
+
+### 3. 🗺️ Bản đồ & Tối ưu hóa (Map & Optimization)
+* **Mapbox Integration:** Hiển thị bản đồ trực quan, mượt mà.
+* **Marker & Polyline:** Vẽ điểm xuất phát, các điểm dừng và đường đi nối liền.
+* **Sliding Panel:** Danh sách điểm dừng dạng trượt, dễ dàng thao tác thêm/xóa/sửa.
+* **Route Optimization:** Tính năng "Tối ưu ngay" gọi API backend để sắp xếp lại thứ tự giao hàng ngắn nhất.
+
+### 4. 📊 Hồ sơ & Thống kê (Profile & Stats)
+* **Dashboard cá nhân:** Thống kê:
+    * Số ngày hoạt động.
+    * Tổng số đơn hàng giao thành công.
+    * Tổng quãng đường di chuyển (Km).
+    * Đánh giá trung bình (Rating).
+* **Chỉnh sửa thông tin:** Cập nhật SĐT, loại xe, họ tên với cơ chế Hoàn tác/Lưu.
+
+---
+
+## 🛠️ Công nghệ sử dụng (Tech Stack)
+
+* **Core:** React Native (0.74.x)
+* **Navigation:** React Navigation (Native Stack, Bottom Tabs)
+* **Maps:** `@rnmapbox/maps` (Mapbox SDK)
+* **State & Storage:** React Hooks (`useState`, `useEffect`, `useMemo`), `AsyncStorage`
+* **Network:** `axios` (API Client)
+* **UI Components:** `react-native-vector-icons`, `rn-sliding-up-panel`, `react-native-safe-area-context`
+* **Utils:** `jwt-decode` (Xử lý Token), `DeviceEventEmitter` (Event Bus)
+
+---
+
+## 📂 Cấu trúc Thư mục (Project Structure)
+
+```text
+src/
+├── components/         # Các Component tái sử dụng (FilterModal, RouteSheet...)
+├── hooks/              # Custom Hooks (useRouteFilter...)
+├── navigation/         # Cấu hình điều hướng (AppNavigator, AuthStack, MainTab...)
+├── screens/            # Các màn hình chính
+│   ├── AuthScreen.js
+│   ├── HomeScreen.js
+│   ├── ProfileScreen.js
+│   ├── RouteDetailScreen.js
+│   └── CreateRouteScreen.js
+├── utils/              # Các hàm tiện ích (Colors, FormatDate...)
+└── App.tsx             # Entry point & Logic kiểm tra Token
 ```
 
-## Step 2: Start your Application
+## 🚀 Cài đặt và Chạy dự án (Installation)
+### 1. Yêu cầu tiên quyết
+* Node.js (>= 18.x)
+* JDK 17
+* Android Studio (cho Android) hoặc Xcode (cho iOS)
+* Tài khoản Mapbox (để lấy Access Token)
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
+## 2. Cài đặt
+Bước 1: Clone dự án
 
-### For Android
+```Bash
+git clone [https://github.com/Dinhthuy2k5/ShipperApp-Frontend.git](https://github.com/Dinhthuy2k5/ShipperApp-Frontend.git)
+cd ShipperApp
+```
 
-```bash
-# using npm
+Bước 2: Cài đặt thư viện
+
+```Bash
+npm install
+# Hoặc
+yarn install
+```
+
+Bước 3: Cấu hình Mapbox
+
+Tạo file .env (hoặc cấu hình trực tiếp trong android/app/src/main/res/values/strings.xml nếu dùng Android).
+Thêm Key Mapbox của bạn vào src/components/RouteDetailMap.js (hoặc nơi bạn cấu hình Mapbox).
+
+Bước 4: Chạy ứng dụng
+
+Android:
+
+```Bash
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### For iOS
+iOS:
 
-```bash
-# using npm
+```Bash
+cd ios && pod install && cd ..
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+⚠️ Các vấn đề thường gặp (Troubleshooting)
+* Lỗi kết nối API (Network Error):
+* Nếu chạy trên máy ảo Android (Emulator), hãy đảm bảo API_URL là http://10.0.2.2:3000.
+* Nếu chạy trên máy thật, hãy dùng địa chỉ IP LAN của máy tính (VD: http://192.168.1.x:3000).
+* Lỗi Mapbox không hiển thị:
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+     * Kiểm tra lại MAPBOX_ACCESS_TOKEN.
 
-## Step 3: Modifying your App
+     *Đảm bảo đã cấp quyền Vị trí (Location Permission) cho ứng dụng.
 
-Now that you have successfully run the app, let's modify it.
+## 👨‍💻 Tác giả
+Nguyễn Đình Thủy
 
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
+MSSV: 20235437
 
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+Dự án: Project 1 - Đại học Bách Khoa Hà Nội
