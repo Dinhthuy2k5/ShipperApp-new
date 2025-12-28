@@ -141,7 +141,12 @@ const RouteDetailSheet = ({
                                     placeholder="Thêm điểm dừng mới..."
                                     value={newStopAddress}
                                     onSelect={(addr) => setNewStopAddress(addr)}
-                                    containerStyle={{ marginBottom: 0 }} // Reset margin vì đang nằm trong flex row
+                                    containerStyle={{ marginBottom: 0 }}
+
+                                    // --- TRUYỀN TỌA ĐỘ ĐIỂM XUẤT PHÁT VÀO ĐÂY ---
+                                    // Mapbox sẽ ưu tiên tìm kết quả gần điểm này nhất
+                                    referenceLat={routeDetails?.start_lat}
+                                    referenceLng={routeDetails?.start_lng}
                                 />
                             </View>
                             <TouchableOpacity style={styles.addButton} onPress={handleAddStop}>

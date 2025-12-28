@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, FlatList, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, TextInput, FlatList, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -9,7 +9,9 @@ const AddressAutocomplete = ({
     placeholder,
     value,
     onSelect, // Hàm callback khi chọn địa chỉ: (addressText) => void
-    containerStyle
+    containerStyle,
+    referenceLat,
+    referenceLng
 }) => {
     const [query, setQuery] = useState(value || '');
     const [results, setResults] = useState([]);
@@ -31,9 +33,19 @@ const AddressAutocomplete = ({
         setLoading(true);
         try {
             const token = await AsyncStorage.getItem('userToken');
-            // Gọi về Backend của mình
+
+            // Chuẩn bị tham số gửi lên Backend
+            const params = { q: text };
+
+            // Nếu có tọa độ tham chiếu thì gửi kèm để ưu tiên tìm quanh đó
+            if (referenceLat && referenceLng) {
+                params.userLat = referenceLat;
+                params.userLng = referenceLng;
+                console.log("Đang tìm kiếm quanh:", referenceLat, referenceLng);
+            }
+
             const res = await axios.get(`http://10.0.2.2:3000/api/routes/search`, {
-                params: { q: text },
+                params: params, // Truyền params vào đây
                 headers: { Authorization: `Bearer ${token}` }
             });
             setResults(res.data);
@@ -76,17 +88,18 @@ const AddressAutocomplete = ({
             {/* Danh sách gợi ý */}
             {showResults && results.length > 0 && (
                 <View style={styles.resultsList}>
-                    <FlatList
-                        data={results}
-                        keyExtractor={(item) => item.id}
-                        keyboardShouldPersistTaps="handled" // Quan trọng để bấm được
-                        renderItem={({ item }) => (
-                            <TouchableOpacity style={styles.resultItem} onPress={() => handleSelect(item)}>
+                    <ScrollView keyboardShouldPersistTaps="handled">
+                        {results.map((item) => (
+                            <TouchableOpacity
+                                key={item.id}
+                                style={styles.resultItem}
+                                onPress={() => handleSelect(item)}
+                            >
                                 <Icon name="location-outline" size={18} color="#666" style={{ marginRight: 10 }} />
                                 <Text style={styles.resultText}>{item.name}</Text>
                             </TouchableOpacity>
-                        )}
-                    />
+                        ))}
+                    </ScrollView>
                 </View>
             )}
         </View>
