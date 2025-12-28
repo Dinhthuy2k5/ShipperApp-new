@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AddressAutocomplete from '../components/AddressAutocomplete';
 
 const CreateRouteScreen = ({ navigation }) => {
     const [name, setName] = useState('');
@@ -36,7 +37,10 @@ const CreateRouteScreen = ({ navigation }) => {
             <Text style={styles.label}>Tên lộ trình:</Text>
             <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="VD: Đơn sáng nay" />
             <Text style={styles.label}>Điểm xuất phát:</Text>
-            <TextInput style={styles.input} value={start} onChangeText={setStart} placeholder="VD: Kho A" />
+            <AddressAutocomplete
+                placeholder="Nhập địa chỉ kho/cửa hàng..."
+                onSelect={(address) => setStart(address)}
+            />
             <TouchableOpacity style={styles.btn} onPress={handleCreate}><Text style={styles.btnText}>TẠO</Text></TouchableOpacity>
         </View>
     );

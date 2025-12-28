@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions, Animat
 import Icon from 'react-native-vector-icons/Ionicons';
 import SlidingUpPanel from 'rn-sliding-up-panel';
 import { COLORS } from '../utils/colors'; // Import bộ màu
+import AddressAutocomplete from './AddressAutocomplete';
 
 const { height } = Dimensions.get('window');
 
@@ -135,15 +136,14 @@ const RouteDetailSheet = ({
                     {/* FORM THÊM */}
                     {!isCompleted && (
                         <View style={styles.addForm}>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Thêm điểm dừng mới..."
-                                placeholderTextColor="#999"
-                                value={newStopAddress}
-                                onChangeText={setNewStopAddress}
-                                autoCorrect={false}
-                                autoComplete="off"
-                            />
+                            <View style={{ flex: 1, marginRight: 10 }}>
+                                <AddressAutocomplete
+                                    placeholder="Thêm điểm dừng mới..."
+                                    value={newStopAddress}
+                                    onSelect={(addr) => setNewStopAddress(addr)}
+                                    containerStyle={{ marginBottom: 0 }} // Reset margin vì đang nằm trong flex row
+                                />
+                            </View>
                             <TouchableOpacity style={styles.addButton} onPress={handleAddStop}>
                                 <Icon name="add" size={28} color="#fff" />
                             </TouchableOpacity>
