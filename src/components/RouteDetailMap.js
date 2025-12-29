@@ -5,7 +5,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { decodePolyline, getBounds } from '../utils/mapUtils';
-import { COLORS } from '../utils/colors'; // Import bộ màu chuẩn
+import { COLORS } from '../utils/colors';
 
 // Import Token
 import { MAPBOX_ACCESS_TOKEN } from '../utils/config';
@@ -45,20 +45,22 @@ const RouteDetailMap = ({ routeDetails, isNavigationMode }) => {
                     centerCoordinate: [105.85, 21.02],
                     zoomLevel: 14,
                 }}
-                // Logic Dẫn đường: Bám theo vị trí người dùng
+                // Logic Dẫn đường: Chỉ bám theo khi đang ở chế độ dẫn đường
                 followUserLocation={isNavigationMode}
                 followUserMode={isNavigationMode ? 'course' : 'normal'}
                 followZoomLevel={16}
                 followPitch={isNavigationMode ? 45 : 0}
             />
 
-            {/* Hiển thị vị trí Shipper (Chấm xanh) */}
+            {/* --- SỬA ĐỔI TẠI ĐÂY --- */}
+            {/* Chỉ hiển thị và truy cập GPS khi isNavigationMode = true */}
             <MapboxGL.UserLocation
-                visible={true}
+                visible={isNavigationMode}
                 animated={true}
                 showsUserHeadingIndicator={true}
                 androidRenderMode="gps"
             />
+            {/* ----------------------- */}
 
             {/* 1. Điểm Bắt đầu */}
             {routeDetails?.start_lat && (
@@ -83,7 +85,6 @@ const RouteDetailMap = ({ routeDetails, isNavigationMode }) => {
                     >
                         <View style={[
                             styles.markerStop,
-                            // Logic màu sắc: Xanh dương nếu đã tối ưu, Xanh lá nếu đã giao
                             stop.optimized_order && { backgroundColor: COLORS.primary },
                             stop.stop_status === 'delivered' && { backgroundColor: COLORS.success }
                         ]}>
@@ -121,14 +122,14 @@ const styles = StyleSheet.create({
     },
     markerStart: {
         width: 36, height: 36, borderRadius: 18,
-        backgroundColor: COLORS.success, // Dùng màu chuẩn từ file colors
+        backgroundColor: COLORS.success,
         justifyContent: 'center', alignItems: 'center',
         borderWidth: 2, borderColor: '#fff',
         zIndex: 2
     },
     markerStop: {
         width: 30, height: 30, borderRadius: 15,
-        backgroundColor: '#aaa', // Màu mặc định (xám)
+        backgroundColor: '#aaa',
         justifyContent: 'center', alignItems: 'center',
         borderWidth: 2, borderColor: '#fff',
         zIndex: 1
