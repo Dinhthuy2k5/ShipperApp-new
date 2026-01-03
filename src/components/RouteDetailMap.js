@@ -7,34 +7,40 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { decodePolyline, getBounds } from '../utils/mapUtils';
 import { COLORS } from '../utils/colors';
 
-// Import Token
 import { MAPBOX_ACCESS_TOKEN } from '../utils/config';
 MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
 
+// Sử dụng isNavigationMode để quyết định có hiện traffic hay không
 const RouteDetailMap = ({ routeDetails, isNavigationMode }) => {
     const cameraRef = useRef(null);
+    // Biến này để điều khiển việc hiện lớp giao thông.
+    // Bạn có thể tách ra thành một prop riêng nếu muốn nút bật/tắt riêng.
+    const showTrafficLayer = true;
 
-    // Effect: Tự động zoom (Chỉ chạy khi KHÔNG ở chế độ dẫn đường)
     useEffect(() => {
         if (!isNavigationMode && cameraRef.current && routeDetails && routeDetails.start_lat) {
             const validStops = routeDetails.stops.filter(stop => stop.lat && stop.lng);
             const stopsCoords = validStops.map(stop => [stop.lng, stop.lat]);
             const allCoords = [[routeDetails.start_lng, routeDetails.start_lat], ...stopsCoords];
 
-            // Zoom camera để bao quát toàn bộ lộ trình
-            cameraRef.current.fitBounds(
-                getBounds(allCoords)[0],
-                getBounds(allCoords)[1],
-                50, // Padding
-                1000 // Animation duration
-            );
+            if (allCoords.length > 1) {
+                cameraRef.current.fitBounds(
+                    getBounds(allCoords)[0],
+                    getBounds(allCoords)[1],
+                    50,
+                    1000
+                );
+            }
+
         }
     }, [routeDetails, isNavigationMode]);
 
     return (
         <MapboxGL.MapView
             style={styles.map}
-            styleURL={MapboxGL.StyleURL.Street}
+            // StyleURL.Street hoặc StyleURL.TrafficDay đều được.
+            // TrafficDay thì nó làm mờ các tòa nhà đi để nổi bật đường hơn.
+            styleURL={MapboxGL.StyleURL.TrafficDay}
             logoEnabled={false}
             compassEnabled={true}
             compassViewPosition={3}
@@ -45,22 +51,60 @@ const RouteDetailMap = ({ routeDetails, isNavigationMode }) => {
                     centerCoordinate: [105.85, 21.02],
                     zoomLevel: 14,
                 }}
-                // Logic Dẫn đường: Chỉ bám theo khi đang ở chế độ dẫn đường
                 followUserLocation={isNavigationMode}
                 followUserMode={isNavigationMode ? 'course' : 'normal'}
                 followZoomLevel={16}
                 followPitch={isNavigationMode ? 45 : 0}
             />
 
-            {/* --- SỬA ĐỔI TẠI ĐÂY --- */}
-            {/* Chỉ hiển thị và truy cập GPS khi isNavigationMode = true */}
             <MapboxGL.UserLocation
                 visible={isNavigationMode}
                 animated={true}
                 showsUserHeadingIndicator={true}
                 androidRenderMode="gps"
             />
-            {/* ----------------------- */}
+
+            {/* ================================================================== */}
+            {/* --- THÊM LỚP GIAO THÔNG THỜI GIAN THỰC TẠI ĐÂY (REAL-TIME TRAFFIC) --- */}
+            {/* ================================================================== */}
+            {showTrafficLayer && (
+                <MapboxGL.VectorSource id="mapbox-traffic" url="mapbox://mapbox.mapbox-traffic-v1">
+                    {/* 1. Tắc nghẽn nghiêm trọng (Đỏ đậm) */}
+                    <MapboxGL.LineLayer
+                        id="traffic-severe"
+                        sourceLayer="traffic"
+                        filter={['==', 'congestion', 'severe']}
+                        style={{ lineColor: '#8b0000', lineWidth: 3, lineOpacity: 0.7 }}
+                        belowLayerID="routeLine" // Đảm bảo nằm dưới đường lộ trình chính
+                    />
+                    {/* 2. Tắc đường (Đỏ) */}
+                    <MapboxGL.LineLayer
+                        id="traffic-heavy"
+                        sourceLayer="traffic"
+                        filter={['==', 'congestion', 'heavy']}
+                        style={{ lineColor: 'red', lineWidth: 3, lineOpacity: 0.7 }}
+                        belowLayerID="routeLine"
+                    />
+                    {/* 3. Đông đúc (Vàng/Cam) */}
+                    <MapboxGL.LineLayer
+                        id="traffic-moderate"
+                        sourceLayer="traffic"
+                        filter={['==', 'congestion', 'moderate']}
+                        style={{ lineColor: 'orange', lineWidth: 3, lineOpacity: 0.7 }}
+                        belowLayerID="routeLine"
+                    />
+                    {/* 4. Thông thoáng (Xanh lá) - Thường mapbox ít hiện cái này để đỡ rối */}
+                    <MapboxGL.LineLayer
+                        id="traffic-low"
+                        sourceLayer="traffic"
+                        filter={['==', 'congestion', 'low']}
+                        style={{ lineColor: 'green', lineWidth: 2, lineOpacity: 0.5 }}
+                        belowLayerID="routeLine"
+                    />
+                </MapboxGL.VectorSource>
+            )}
+            {/* ================================================================== */}
+
 
             {/* 1. Điểm Bắt đầu */}
             {routeDetails?.start_lat && (
@@ -94,7 +138,7 @@ const RouteDetailMap = ({ routeDetails, isNavigationMode }) => {
                 );
             })}
 
-            {/* 3. Đường đi (Polyline) */}
+            {/* 3. Đường đi chính của Shipper (Vẫn giữ màu xanh chủ đạo) */}
             {routeDetails?.overview_polyline && (
                 <MapboxGL.ShapeSource
                     id="routeSource"
@@ -108,7 +152,8 @@ const RouteDetailMap = ({ routeDetails, isNavigationMode }) => {
                 >
                     <MapboxGL.LineLayer
                         id="routeLine"
-                        style={{ lineColor: COLORS.primary, lineWidth: 5, lineOpacity: 0.8, lineCap: 'round' }}
+                        // Giảm độ đậm và độ mờ đi một chút để nhìn thấy giao thông bên dưới
+                        style={{ lineColor: COLORS.primary, lineWidth: 6, lineOpacity: 0.6, lineCap: 'round' }}
                     />
                 </MapboxGL.ShapeSource>
             )}
