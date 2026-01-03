@@ -12,7 +12,8 @@ import {
     Switch,
     Alert,
     SafeAreaView,
-    ActivityIndicator
+    ActivityIndicator,
+    DeviceEventEmitter
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../utils/colors';
@@ -84,9 +85,22 @@ const ProfileScreen = ({ onSignOut }) => {
 
     // --- 2. OPTIMIZATION: CHỈ TẢI 1 LẦN KHI MỞ APP ---
     // Thay thế useFocusEffect bằng useEffect với dependency rỗng []
+    // --- 2. SỬA LẠI USEEFFECT ĐỂ LẮNG NGHE SỰ KIỆN ---
     useEffect(() => {
+        // Tải dữ liệu lần đầu
         fetchProfile();
         fetchStats();
+
+        // Đăng ký lắng nghe sự kiện 'REFRESH_PROFILE'
+        const subscription = DeviceEventEmitter.addListener('REFRESH_PROFILE', () => {
+            fetchStats();   // Tải lại thống kê (số đơn, km...)
+            fetchProfile(); // Tải lại thông tin cá nhân (nếu cần)
+        });
+
+        // Dọn dẹp listener khi thoát màn hình
+        return () => {
+            subscription.remove();
+        };
     }, []);
 
     // --- 3. CÁC HÀM XỬ LÝ ---

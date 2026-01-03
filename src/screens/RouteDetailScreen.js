@@ -77,8 +77,12 @@ const RouteDetailScreen = ({ route }) => {
             // 2. Tải lại dữ liệu cho màn hình Chi tiết này
             loadData();
 
-            // 3. QUAN TRỌNG: Bắn tín hiệu để màn hình Home cập nhật lại danh sách
-            DeviceEventEmitter.emit('REFRESH_ROUTES');
+            // 3. Bắn tín hiệu cập nhật
+            DeviceEventEmitter.emit('REFRESH_ROUTES'); // Cập nhật Trang chủ (Cũ)
+
+            // --- THÊM DÒNG NÀY ---
+            DeviceEventEmitter.emit('REFRESH_PROFILE'); // Cập nhật màn hình Profile
+            // --------------------
 
         } catch (error) {
             console.error("Lỗi thao tác:", error);
